@@ -37,7 +37,7 @@ This will stop all the EC2 instances with specific tag during off-hours
 This will start all the EC2 instances with specific tag during working hours
 
 ### Scheduling the Scripts
-1. To automate the execution of these scripts, you can use a scheduling service such as AWS Lambda with CloudWatch Events or an EC2 instance with cron jobs.
+To automate the execution of these scripts, you can use a scheduling service such as AWS Lambda with CloudWatch Events or an EC2 instance with cron jobs.
 
     #### Using AWS Lambda and CloudWatch Events
     1. **Create Lambda Functions:** Deploy the shutdown and startup scripts as separate Lambda functions.
