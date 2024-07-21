@@ -1,60 +1,48 @@
 import boto3
 from datetime import datetime
 
-# Intitialize the a session using Amazon EC2
-ec2 = boto3.client('ec2')
+def lambda_handler(event, context):
+    # Initialize a session using Amazon EC2
+    ec2 = boto3.client('ec2')
 
-# # Intitialize the a session using Amazon S3
-# s3 = boto3.client('s3')
+    # Define the tag key and value for non-essential services
+    tag_key = 'Environment'
+    tag_value = 'NonEssential'
 
-# s3_resource = boto3.resource('s3')
-# bucket = s3_resource.Bucket('mybucket')
-# bucket.create()
-# bucket.upload_file('test.txt', 'test.txt')
-# bucket.download_file('test.txt', 'test.txt')
-# bucket.delete()
+    # Define the off-hours (example: 7 PM to 7 AM)
+    off_hours_start = 19
+    off_hours_end = 7
 
-# Define the tag key and value for non-essential services
-tag_key = 'Environment'
-tag_value = 'NonEssential'
+    # Get current hour
+    current_hour = datetime.now().hour
 
-# Define the working hours
-working_hours_start = 7
-working_hours_end = 19
+    # Check if it's off-hours
+    if current_hour >= off_hours_start or current_hour < off_hours_end:
+        # Find all instances with the specified tag
+        response = ec2.describe_instances(
+            Filters=[
+                {
+                    'Name': f'tag:{tag_key}',
+                    'Values': [tag_value]
+                },
+                {
+                    'Name': 'instance-state-name',
+                    'Values': ['running']
+                }
+            ]
+        )
 
-# Get the current hour
-current_hour = datetime.now().hour
-print(current_hour)
+        # Extract instance IDs
+        instance_ids = []
+        for reservation in response['Reservations']:
+            for instance in reservation['Instances']:
+                instance_ids.append(instance['InstanceId'])
 
-# Check if it's working hours
-if working_hours_start <= current_hour < working_hours_end:
-    # Get all running instances with the specified tag
-    response = ec2.describe_instances(
-        Filters=[
-            {
-                'Name': f'tag:{tag_key}',
-                'Values': [tag_value]
-            },
-            {
-                'Name': 'instance-state-name',
-                'Values': ['running']
-            }
-        ]
-    )
-    # Extracting instance IDs
-    instance_ids = []
-    for reservation in response['Reservations']:
-        for instance in reservation['Instances']:
-            instance_ids.append(instance['InstanceId'])
-            print(instance_ids)
-            
-    # Stop instances
-    if instance_ids:
-        print(f'Stopping instances: {instance_ids}')
-        ec2.stop_instances(InstanceIds=instance_ids)
+        # Stop instances
+        if instance_ids:
+            print(f"Stopping instances: {instance_ids}")
+            ec2.stop_instances(InstanceIds=instance_ids)
+        else:
+            print("No instances to stop.")
     else:
-        print("No instances to stop")
-
-else:
-    print("It's not off-hours. No action taken.")
-
+        print("It's not off-hours. No action taken.")
